@@ -11,6 +11,8 @@ import Model.Message;
 import Service.MessageService;
 import Service.UserService;
 
+import java.util.List;
+
 /**
  * TODO: You will need to write your own endpoints and handlers for your controller. The endpoints you will need can be
  * found in readme.md as well as the test cases. You should
@@ -37,6 +39,7 @@ public class SocialMediaController {
         app.post("/messages", this::PostNewMessage);
         app.get("/messages", this::GetAllMessages);
         app.get("/messages/{message_id}", this::GetSpecificMessage);
+        app.delete("/messages/{message_id}", this::DeleteMessage);
         app.get("/accounts/{account_id}/messages", this::GetAllAccountMessages);
         app.patch("/messages/{message_id}", this::PatchRewriteMessage);
 
@@ -76,28 +79,68 @@ public class SocialMediaController {
     }
 
         //Add a new message given everything, but the id
-    private void PostNewMessage(Context context) {
-        context.json("sample text");
+    private void PostNewMessage(Context context) throws JsonProcessingException {
+        ObjectMapper mapper = new ObjectMapper();
+        Message message = mapper.readValue(context.body(), Message.class); //Create an object wrapper to read the json text into the register variable
+
+        message = messageService.addMessage(message);  //Run the register method from accountService to add the new account to the db
+        
+        if(message != null){ //If the account returns it means it was sucessfully added to the database
+            //context.status(200);
+            System.out.println("Success in adding message");
+            context.json(mapper.writeValueAsString(message));
+        } else {
+            context.status(400);
+        } 
     }
 
         //Return all messages
-    private void GetAllMessages(Context context) {
-        context.json("sample text");
+    private void GetAllMessages(Context context) throws JsonProcessingException  {
+        ObjectMapper mapper = new ObjectMapper();
+        List<Message> allMessages = messageService.getMessages();
+        context.json(mapper.writeValueAsString(allMessages));
     }
 
         //Get this specific message give by the id
-    private void GetSpecificMessage(Context context) {
-        context.json("sample text");
+    private void GetSpecificMessage(Context context) throws JsonProcessingException {
+        ObjectMapper mapper = new ObjectMapper();
+        int message_ID = Integer.parseInt(context.pathParam("message_id"));
+        Message message = messageService.getMessage(message_ID);
+        if(message != null){context.json(mapper.writeValueAsString(message));};
     }
 
         //Get the messages of this account by the ID
-    private void GetAllAccountMessages(Context context) {
-        context.json("sample text");
+    private void GetAllAccountMessages(Context context) throws JsonProcessingException {
+        ObjectMapper mapper = new ObjectMapper();
+        int account_id = Integer.parseInt(context.pathParam("account_id"));
+        List<Message> accountMessages = messageService.getAccountMessages(account_id);
+        context.json(mapper.writeValueAsString(accountMessages));
     }
 
         //Edit the body of a certain message [Find more info]
-    private void PatchRewriteMessage(Context context) {
-        context.json("sample text");
+    private void PatchRewriteMessage(Context context) throws JsonProcessingException {
+        ObjectMapper mapper = new ObjectMapper();
+        Message message = mapper.readValue(context.body(), Message.class); //Create an object wrapper to read the json text into the register variable
+        int message_ID = Integer.parseInt(context.pathParam("message_id"));
+
+        message = messageService.editMessage(message_ID, message.message_text);  //Run the register method from accountService to add the new account to the db
+        
+        if(message != null && message.message_id == message_ID){ //If the account returns it means it was sucessfully added to the database
+            //context.status(200);
+            System.out.println("Success in adding message");
+            context.json(mapper.writeValueAsString(message));
+        } else {
+            context.status(400);
+        }
     }
 
+    private void DeleteMessage(Context context) throws JsonProcessingException {
+        ObjectMapper mapper = new ObjectMapper();
+        int message_ID = Integer.parseInt(context.pathParam("message_id"));
+
+        Message message = messageService.DeleteMessage(message_ID);
+        
+        if(message.message_id == message_ID){context.json(mapper.writeValueAsString(message));}
+        
+    }
 }
