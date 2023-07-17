@@ -43,28 +43,36 @@ public class SocialMediaController {
         return app;
     }
 
-        //Check wheter a user can log in
-    private void PostLoginUser(Context context) throws JsonProcessingException {
-            //Create an object wrapper to read the json text into the login variable
-        ObjectMapper mapper = new ObjectMapper();
-        Account login = mapper.readValue(context.body(), Account.class);
 
-            //Run the login method from accountService to return with the account from the DB
-        Account account = accountService.login(login.account_id);  
+    private void PostLoginUser(Context context) throws JsonProcessingException {
+        ObjectMapper mapper = new ObjectMapper();
+        Account login = mapper.readValue(context.body(), Account.class); //Create an object wrapper to read the json text into the login variable
+
+        Account account = accountService.login(login.username);  //Run the login method from accountService to return with the account from the DB
         
-            //If the account returns and the login password is correct, then return true
 //TODO: Try and encrypt the password???
-        if(account != null && login.password == account.password){
-            //return true
+        if(account != null && login.password.compareTo(account.password) == 0){ //If the account returns and the login password is correct, then return true
+            context.status(200);
+            context.json(mapper.writeValueAsString(account));
         } else {
 //TODO: Send an error message [Check which one]
-            context.json("sample text");
+            context.status(401);
         }
     }
 
-        //Register a new user given everything, but the id
-    private void PostRegisterUser(Context context) {
-        context.json("sample text");
+    private void PostRegisterUser(Context context) throws JsonProcessingException {
+        ObjectMapper mapper = new ObjectMapper();
+        Account register = mapper.readValue(context.body(), Account.class); //Create an object wrapper to read the json text into the register variable
+
+        Account account = accountService.register(register);  //Run the register method from accountService to add the new account to the db
+        
+        if(account != null){ //If the account returns it means it was sucessfully added to the database
+            //context.status(200);
+            System.out.println("Sucess in Registering");
+            context.json(mapper.writeValueAsString(account));
+        } else {
+            context.status(400);
+        } 
     }
 
         //Add a new message given everything, but the id
