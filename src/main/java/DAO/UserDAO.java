@@ -1,9 +1,6 @@
 package DAO;
 
-import java.util.List;
-import java.util.ArrayList;
 import Model.Account;
-import Model.Message;
 import Util.ConnectionUtil;
 import java.sql.*;
 
@@ -121,28 +118,6 @@ public class UserDAO {
         
     }
 
-    public List<Message> getUserMessages(int userID){
-        Connection connection = ConnectionUtil.getConnection();
-        List<Message> message = new ArrayList<>(); //get connection and create the answer variable
-        
-        try {
-            String sql = "Select * FROM message WHERE posted_by = ?"; //Select all columns from the account table, where accountId = userId
-
-            PreparedStatement preparedStatement = connection.prepareStatement(sql);
-            preparedStatement.setInt(1, userID);
-            ResultSet rs = preparedStatement.executeQuery(); //Create fill and run a prepared statement
-
-
-            while(rs.next()){ //Sets the user to the retrieved data and returns
-                message.add(new Message(
-                    rs.getInt("message_id"),
-                    rs.getInt("posted_by"),
-                    rs.getString("message_text"),
-                    rs.getLong("time_posted_epoch")));
-            }
-        } catch(SQLException e){ System.out.println(e.getMessage());}//If it fails, run the standard sqlexception
-
-        return message;
-    }
+    
     
 }

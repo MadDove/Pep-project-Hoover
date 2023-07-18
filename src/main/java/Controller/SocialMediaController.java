@@ -12,6 +12,9 @@ import Service.MessageService;
 import Service.UserService;
 
 import java.util.List;
+import java.util.ArrayList;
+
+import org.h2.expression.function.JsonConstructorFunction;
 
 /**
  * TODO: You will need to write your own endpoints and handlers for your controller. The endpoints you will need can be
@@ -78,46 +81,15 @@ public class SocialMediaController {
         } 
     }
 
-        //Add a new message given everything, but the id
+        //These two return a json on sucess and 400 on failure NewMessage adds a message and Rewrite changes the text of a message
     private void PostNewMessage(Context context) throws JsonProcessingException {
         ObjectMapper mapper = new ObjectMapper();
         Message message = mapper.readValue(context.body(), Message.class); //Create an object wrapper to read the json text into the register variable
 
         message = messageService.addMessage(message);  //Run the register method from accountService to add the new account to the db
         
-        if(message != null){ //If the account returns it means it was sucessfully added to the database
-            //context.status(200);
-            System.out.println("Success in adding message");
-            context.json(mapper.writeValueAsString(message));
-        } else {
-            context.status(400);
-        } 
+        JsonSucess(context, message);
     }
-
-        //Return all messages
-    private void GetAllMessages(Context context) throws JsonProcessingException  {
-        ObjectMapper mapper = new ObjectMapper();
-        List<Message> allMessages = messageService.getMessages();
-        context.json(mapper.writeValueAsString(allMessages));
-    }
-
-        //Get this specific message give by the id
-    private void GetSpecificMessage(Context context) throws JsonProcessingException {
-        ObjectMapper mapper = new ObjectMapper();
-        int message_ID = Integer.parseInt(context.pathParam("message_id"));
-        Message message = messageService.getMessage(message_ID);
-        if(message != null){context.json(mapper.writeValueAsString(message));};
-    }
-
-        //Get the messages of this account by the ID
-    private void GetAllAccountMessages(Context context) throws JsonProcessingException {
-        ObjectMapper mapper = new ObjectMapper();
-        int account_id = Integer.parseInt(context.pathParam("account_id"));
-        List<Message> accountMessages = messageService.getAccountMessages(account_id);
-        context.json(mapper.writeValueAsString(accountMessages));
-    }
-
-        //Edit the body of a certain message [Find more info]
     private void PatchRewriteMessage(Context context) throws JsonProcessingException {
         ObjectMapper mapper = new ObjectMapper();
         Message message = mapper.readValue(context.body(), Message.class); //Create an object wrapper to read the json text into the register variable
@@ -125,22 +97,56 @@ public class SocialMediaController {
 
         message = messageService.editMessage(message_ID, message.message_text);  //Run the register method from accountService to add the new account to the db
         
-        if(message != null && message.message_id == message_ID){ //If the account returns it means it was sucessfully added to the database
-            //context.status(200);
-            System.out.println("Success in adding message");
-            context.json(mapper.writeValueAsString(message));
-        } else {
-            context.status(400);
-        }
+        JsonSucess(context, message);
     }
+        
+        //Return all messages on success, are empty on not finding one, etc.
+    private void GetAllMessages(Context context) throws JsonProcessingException  {
+        List<Message> allMessages = messageService.getMessages();
+        JsonAddFound(context, allMessages);
+    }
+    private void GetAllAccountMessages(Context context) throws JsonProcessingException {
+        int account_id = Integer.parseInt(context.pathParam("account_id"));
+        List<Message> accountMessages = messageService.getAccountMessages(account_id);
+        JsonAddFound(context, accountMessages);
+    }
+        
 
-    private void DeleteMessage(Context context) throws JsonProcessingException {
-        ObjectMapper mapper = new ObjectMapper();
+    //These two methods take in an ID and always are 200, will return empty if the message doesn't exist, and has the json on a success
+    private void DeleteMessage(Context context) throws JsonProcessingException{
         int message_ID = Integer.parseInt(context.pathParam("message_id"));
 
         Message message = messageService.DeleteMessage(message_ID);
         
-        if(message.message_id == message_ID){context.json(mapper.writeValueAsString(message));}
-        
+        JsonAddFound(context, message);
     }
+    private void GetSpecificMessage(Context context) throws JsonProcessingException {
+        int message_ID = Integer.parseInt(context.pathParam("message_id"));
+        Message message = messageService.getMessage(message_ID);
+        JsonAddFound(context, message);
+    }
+
+    private void JsonSucess(Context context, Message message)throws JsonProcessingException{
+        ObjectMapper mapper = new ObjectMapper();
+        if(message != null){
+            context.json(mapper.writeValueAsString(message));
+        } else{
+            context.status(400);
+        }
+    }
+    private void JsonAddFound(Context context, Message message) throws JsonProcessingException {
+        ObjectMapper mapper = new ObjectMapper();
+        if(message != null){
+            context.json(mapper.writeValueAsString(message));
+        }
+    } 
+    private void JsonAddFound(Context context, List<Message> messages) throws JsonProcessingException{
+        ObjectMapper mapper = new ObjectMapper();
+        if(messages != null){
+            context.json(mapper.writeValueAsString(messages));
+        } else {
+            context.json(mapper.writeValueAsString(new ArrayList<Message>()));
+        }
+    }
+
 }
